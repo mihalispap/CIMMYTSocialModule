@@ -25,7 +25,7 @@ $OAUTH2_CLIENT_ID = '385927352495-5kcc607vt85vdmmvi638shic2f1q4hsk.apps.googleus
 $OAUTH2_CLIENT_SECRET = 'XXXXXXXXXX';
 $OAUTH2_CLIENT_SECRET = 'Q09XGvcZ2EvCPaPYZVxlXG_0';
 $OAUTH2_CLIENT_SECRET = 'rGWCw5DIEkCkVOzTcKgc2VMC';
-$REDIRECT = 'http://www.dendrologio.gr/google_api/upload_test.php';
+$REDIRECT = 'http://dev.agroknow.com/cimmyt/CIMMYTSocialModule/youtube/auth.php';
 $APPNAME = "XXXXXXXXX";
 $APPNAME = "CIMMYT Sharer";
 
@@ -47,17 +47,25 @@ if (isset($_GET['code'])) {
         die('The session state did not match.');
     }
 
- print_r($client);
- print_r($_SESSION);
+ //print_r($client);
+ //print_r($_SESSION);
 
-    $client->authenticate($_GET['code']);
-    $_SESSION['token'] = $client->getAccessToken();
-  //print_r($_SESSION);
+
+	$client->authenticate($_GET['code']);
+    	$_SESSION['token'] = $client->getAccessToken();
+
+	$towrite="{\"access_token\":\"".$_SESSION['token']['access_token']."\",\"token_type\":\"".$_SESSION['token']['token_type']."\",\"expires_in\":".$_SESSION['token']['expires_in'].",\"created\":".$_SESSION['token']['created']."}";
+
+	echo "To authorise the app, please copy this:".$towrite." at the_key.txt of your youtube root installation folder!";
+
+		$fp = fopen('./the_key.txt', 'w');
+                fwrite($fp, $towrite);
+                fclose($fp);
 }
 
 if (isset($_SESSION['token'])) {
     $client->setAccessToken($_SESSION['token']);
-    echo '<code>' . $_SESSION['token'] . '</code>';
+    //echo '<code>' . $_SESSION['token'] . '</code>';
 }
 
  //print_r($client);
