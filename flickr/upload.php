@@ -8,6 +8,8 @@ function process_and_upload($dir_name, $filename, $f)
 	$description="";
 	$tags="";
 
+	$toupload=false;
+
 	if ($handle_inner = opendir($dir_name))
 	{
 		//echo "I am in";
@@ -67,6 +69,18 @@ function process_and_upload($dir_name, $filename, $f)
 				}
 
 			}
+
+			if($file_info['extension']=="xml" && $file_info['filename']=="metadata_export")
+                        {
+                                $xml=simplexml_load_file($dir_name."/"."metadata_export.xml") or die("Error: Cannot create object");
+
+				//print_r($xml->dcvalue);
+				//exit;
+
+				if($xml->dcvalue[0]==1)
+					$toupload=true;
+                        }
+
 		}
 		closedir($handle_inner);
 	}
@@ -94,7 +108,8 @@ function process_and_upload($dir_name, $filename, $f)
 		fclose($handle);
 	}
 
-	$ret=$f->sync_upload($dir_name."/".$filename,$title,$description,$tags);
+	if($toupload==true)
+		$ret=$f->sync_upload($dir_name."/".$filename,$title,$description,$tags);
 
 	echo "RETURNED:".$ret;
 
@@ -163,6 +178,8 @@ function process_and_upload($dir_name, $filename, $f)
 
 	//change this to the permissions you will need
 	$f->auth("write");
+
+	echo "asdasd";
 
 	echo "something";
 

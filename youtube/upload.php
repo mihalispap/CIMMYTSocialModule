@@ -103,6 +103,8 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 	$videoTitle = "";
 	$videoDescription = "";
 
+	$toupload=false;
+
 	if ($handle_inner = opendir($dir_name))
 	{
 		//echo "I am in";
@@ -146,6 +148,17 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 				}
 			}
 
+			if($file_info['extension']=="xml" && $file_info['filename']=="metadata_export")
+			{
+				$xml=simplexml_load_file($dir_name."/"."metadata_export.xml") or die("Error: Cannot create object");
+
+ 				//print_r($xml->dcvalue);
+ 				//exit;
+
+ 				if($xml->dcvalue[0]==1)
+ 					$toupload=true;
+                        }
+
 		}
 		closedir($handle_inner);
 	}
@@ -164,12 +177,16 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 
 			if($values[0]==$hash)
 			{
+				echo "Already up!";
 				return;
 			}
 
 		}
 		fclose($handle);
 	}
+
+	if($toupload==false)
+		return;
 
 	echo "I will upload:".$filename.", with:";
 	echo "TITLE @END:".$videoTitle;
@@ -195,8 +212,13 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 			 * Check to see if our access token has expired. If so, get a new one and save it to file for future use.
 			 */
 			if($client->isAccessTokenExpired()) {
-				$newToken = json_decode($client->getAccessToken());
-				$client->refreshToken($newToken->refresh_token);
+				//$newToken = $client->getAccessToken();//json_decode($client->getAccessToken());
+
+				$fp=fopen('./refresh_token.txt','r');
+				$refresh_token=fgetss($fp,4096);
+				fclose($fp);
+
+				$client->refreshToken($refresh_token);
 				file_put_contents('the_key.txt', $client->getAccessToken());
 			}
 

@@ -341,6 +341,7 @@ if ( !class_exists('phpFlickr') ) {
 		}
 
 		function setToken ($token) {
+			echo "test";
 			// Sets an authentication token to use instead of the session variable
 			$this->token = $token;
 		}

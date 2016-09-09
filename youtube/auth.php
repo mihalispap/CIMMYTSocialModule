@@ -56,11 +56,21 @@ if (isset($_GET['code'])) {
 
 	$towrite="{\"access_token\":\"".$_SESSION['token']['access_token']."\",\"token_type\":\"".$_SESSION['token']['token_type']."\",\"expires_in\":".$_SESSION['token']['expires_in'].",\"created\":".$_SESSION['token']['created']."}";
 
-	echo "To authorise the app, please copy this:".$towrite." at the_key.txt of your youtube root installation folder!";
+	//echo "To authorise the app, please copy this:".$towrite." at the_key.txt of your youtube root installation folder!";
 
 		$fp = fopen('./the_key.txt', 'w');
                 fwrite($fp, $towrite);
                 fclose($fp);
+
+		if(isset($_SESSION['refresh_token']))
+		{
+			//1/9d45WODQV6WXXrbK1WMLWYHDRUwEDi8XmukNglFfq7U
+
+			$fp=fopen('./refresh_token.txt','w');
+			fwrite($fp,$towrite);
+			fclose($fp);
+		}
+
 }
 
 if (isset($_SESSION['token'])) {
