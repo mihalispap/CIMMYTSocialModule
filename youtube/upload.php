@@ -1,5 +1,26 @@
 <?php
 
+function remove_line($filename, $line_no)
+{
+        $fp=fopen($filename,"r");
+        $fpt=fopen("temp.tmp","w");
+
+        $lineC=-1;
+        while (!feof($fp))
+        {
+                $lineC++;
+                $buffer = fgetss($fp, 4096);
+                if($lineC!=$line_no)
+                        fwrite($fpt,$buffer);
+        }
+        fclose($fpt);
+        fclose($fp);
+
+        unlink($filename);
+        rename("temp.tmp",$filename);
+}
+
+
 
 //set_include_path($_SERVER['DOCUMENT_ROOT'] . '/path-to-your-director/');
 
@@ -105,6 +126,8 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 
 	$toupload=false;
 
+	$cid="";
+
 	if ($handle_inner = opendir($dir_name))
 	{
 		//echo "I am in";
@@ -145,6 +168,13 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 						$tags=(string)$xml->dcvalue[$i];
 						array_push($videoTags,$tags);
 					}
+					if($xml->dcvalue[$i]->attributes()['element']=='identifier'
+                                                &&
+                                                $xml->dcvalue[$i]->attributes()['qualifier']=='uri')
+                                        {
+                                                $cid=$xml->dcvalue[$i];
+                                        }
+
 				}
 			}
 
@@ -163,8 +193,13 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 		closedir($handle_inner);
 	}
 
-	$hash=$filename.$title.$description.$tags;
+	$hash=$filename.$videoTitle.$videoDescription.$videoTags;
 	$hash=md5($hash);
+
+	$lineC=-1;
+	$lines_to_delete=array();
+
+	$ids_to_delete=array();
 
 	$handle = @fopen("conf"."/"."uploads", "r");
 	if ($handle)
@@ -172,18 +207,37 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 		while (!feof($handle))
 		{
 			$buffer = fgetss($handle, 4096);
-
+			$lineC++;
 			$values=explode("\t",$buffer);
 
-			if($values[0]==$hash)
+			if(isset($values[3]))
+				$values[3]=str_replace("\n","",$values[3]);
+
+			if($cid==$values[2] || $filename==$values[3])
 			{
-				echo "Already up!";
-				return;
+				if($values[0]==$hash)
+				{
+					echo $filename.$title.$description.$tags;
+					echo "Already up!";
+					return;
+				}
+				if($values[3]==$filename)
+				{
+					echo "I should update!".$filename;
+					$lines_to_delete[]=$lineC;
+					$ids_to_delete[]=$values[1];
+					//return;
+				}
 			}
 
 		}
 		fclose($handle);
 	}
+
+	print_r($lines_to_delete);
+
+        for($i=0;$i<count($lines_to_delete);$i++)
+                remove_line("conf"."/"."uploads",$lines_to_delete[$i]);
 
 	if($toupload==false)
 		return;
@@ -217,12 +271,20 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 				$fp=fopen('./refresh_token.txt','r');
 				$refresh_token=fgetss($fp,4096);
 				fclose($fp);
+				echo "|".$refresh_token."|";
+				$refresh_token=str_replace("\n","",$refresh_token);
 
 				$client->refreshToken($refresh_token);
 				file_put_contents('the_key.txt', $client->getAccessToken());
 			}
 
 			$youtube = new Google_Service_YouTube($client);
+
+			if(isset($ids_to_delete[0]))
+			{
+				for($i=0;$i<count($ids_to_delete);$i++)
+					$youtube->videos->delete($ids_to_delete[$i]);
+			}
 
 			// Create a snipet with title, description, tags and category id
 			$snippet = new Google_Service_YouTube_VideoSnippet();
@@ -233,7 +295,7 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 
 			// Create a video status with privacy status. Options are "public", "private" and "unlisted".
 			$status = new Google_Service_YouTube_VideoStatus();
-			$status->setPrivacyStatus('private');
+			$status->setPrivacyStatus('public');
 
 			// Create a YouTube video with snippet and status
 			$video = new Google_Service_YouTube_Video();
@@ -284,7 +346,7 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 				if(isset($uploaded_video_id))
 				{
 					$fp = fopen("conf"."/"."uploads", 'a');
-					fwrite($fp, $hash."\t".$uploaded_video_id."\n");
+					fwrite($fp, $hash."\t".$uploaded_video_id."\t".$cid."\t".$filename."\n");
 					fclose($fp);
 				}
 			}

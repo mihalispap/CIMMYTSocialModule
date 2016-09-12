@@ -14,7 +14,7 @@ error_reporting( E_ALL );
     //$api_key                 = "[your api key]";
     //$api_secret              = "[your api secret]";
     $default_redirect        = "/cimmyt/CIMMYTSocialModule/flickr/auth.php";
-    $permissions             = "write";
+    $permissions             = "delete";
     $path_to_phpFlickr_class = "";
 
     ob_start();

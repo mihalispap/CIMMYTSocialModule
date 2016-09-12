@@ -341,7 +341,7 @@ if ( !class_exists('phpFlickr') ) {
 		}
 
 		function setToken ($token) {
-			echo "test";
+			//echo "test";
 			// Sets an authentication token to use instead of the session variable
 			$this->token = $token;
 		}
@@ -405,7 +405,7 @@ if ( !class_exists('phpFlickr') ) {
 			if ( function_exists('curl_init') ) {
 				// Has curl. Use it!
 
-				echo "until here @least..";
+				//echo "until here @least..";
 				
 				//Process arguments, including method and login data.
 				$args = array("api_key" => $this->api_key, "title" => $title, "description" => $description, "tags" => $tags, "is_public" => $is_public, "is_friend" => $is_friend, "is_family" => $is_family);
@@ -415,7 +415,7 @@ if ( !class_exists('phpFlickr') ) {
 					$args = array_merge($args, array("auth_token" => $_SESSION['phpFlickr_auth_token']));
 				}
 				
-				print_r($args);
+				//print_r($args);
 				
 				ksort($args);
 				$auth_sig = "";
@@ -432,7 +432,7 @@ if ( !class_exists('phpFlickr') ) {
 				}
 
 				$photo = realpath($photo);
-				echo "Here:".$photo;
+				//echo "Here:".$photo;
 				$args['photo'] = '@' . $photo;
 
 
@@ -1000,6 +1000,7 @@ if ( !class_exists('phpFlickr') ) {
 		function photos_delete ($photo_id) {
 			/* https://www.flickr.com/services/api/flickr.photos.delete.html */
 			$this->request("flickr.photos.delete", array("photo_id"=>$photo_id), TRUE);
+			print_r($this->parsed_response);
 			return $this->parsed_response ? true : false;
 		}
 

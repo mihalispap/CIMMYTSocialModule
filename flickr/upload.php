@@ -1,12 +1,36 @@
 <?php
 session_start();
 
+//$firsttime=true;
+
+function remove_line($filename, $line_no)
+{
+	$fp=fopen($filename,"r");
+	$fpt=fopen("temp.tmp","w");
+
+	$lineC=-1;
+	while (!feof($fp))
+	{
+		$lineC++;
+        	$buffer = fgetss($fp, 4096);
+		if($lineC!=$line_no)
+			fwrite($fpt,$buffer);
+	}
+	fclose($fpt);
+	fclose($fp);
+
+	unlink($filename);
+	rename("temp.tmp",$filename);
+}
 
 function process_and_upload($dir_name, $filename, $f)
 {
 	$title="";
 	$description="";
 	$tags="";
+	$cid="";
+
+	//global $firsttime;
 
 	$toupload=false;
 
@@ -42,12 +66,20 @@ function process_and_upload($dir_name, $filename, $f)
 					{
 						$tags.=" ".$xml->dcvalue[$i];
 					}
+					if($xml->dcvalue[$i]->attributes()['element']=='identifier'
+                                                &&
+                                                $xml->dcvalue[$i]->attributes()['qualifier']=='uri')
+					{
+						$cid=$xml->dcvalue[$i];
+						//break;
+					}
+					//print_r($xml->dcvalue[$i]->attributes());
 				}
 			}
 
 			if($file_info['filename']=="contents")
 			{
-				echo "Reading:".$dir_name."/"."contents";
+				//echo "Reading:".$dir_name."/"."contents";
 				$handle = @fopen($dir_name."/"."contents", "r");
 				if ($handle)
 				{
@@ -59,15 +91,14 @@ function process_and_upload($dir_name, $filename, $f)
 
 						if($values[0]==$filename)
 						{
-							print_r($values);
+							//print_r($values);
 							$description.="\n".$values[2];
 						}
 
-						echo $buffer;
+						//echo $buffer;
 					}
 					fclose($handle);
 				}
-
 			}
 
 			if($file_info['extension']=="xml" && $file_info['filename']=="metadata_export")
@@ -85,28 +116,62 @@ function process_and_upload($dir_name, $filename, $f)
 		closedir($handle_inner);
 	}
 
+	echo "I am going to upload:".$filename;
+	//return;
+
 	$hash=$filename.$title.$description.$tags;
 	$hash=md5($hash);
+
+	//$descr_md5=md5($description);
 
 	$handle = @fopen("conf"."/"."uploads", "r");
 	if ($handle)
 	{
+		$line_counter=-1;
+		$lines_to_delete=array();
 		while (!feof($handle))
 		{
 			$buffer = fgetss($handle, 4096);
-
+			$line_counter++;
 			$values=explode("\t",$buffer);
 
-			if($values[0]==$hash)
+			$values[count($values)-1]=str_replace("\n","",$values[count($values)-1]);
+
+			if($values[2]==$cid)
 			{
-				fclose($handle);
-				echo "Already uploaded!";
-				return;
+				if($values[0]==$hash)
+				{
+					fclose($handle);
+					echo "Already uploaded!";
+					return;
+				}
+
+				echo "Comparing:".$values[3]."|".$filename;
+				if($values[3]==$filename)
+				{
+					echo "There is an update here!".$values[1]."\n";
+					$f->photos_delete($values[1]);
+
+					$lines_to_delete[]=$line_counter;
+				}
+				/*else
+				{
+					fclose($handle);
+					echo "There is an update! Need delete and repost!";
+					return;
+				}*/
 			}
 
 		}
 		fclose($handle);
 	}
+
+	print_r($lines_to_delete);
+
+	for($i=0;$i<count($lines_to_delete);$i++)
+		remove_line("conf"."/"."uploads",$lines_to_delete[$i]);
+
+	//exit;
 
 	if($toupload==true)
 		$ret=$f->sync_upload($dir_name."/".$filename,$title,$description,$tags);
@@ -116,7 +181,7 @@ function process_and_upload($dir_name, $filename, $f)
 	if(isset($ret) && is_numeric($ret))
 	{
 		$fp = fopen("conf"."/"."uploads", 'a');
-		fwrite($fp, $hash."\t".$ret."\n");
+		fwrite($fp, $hash."\t".$ret."\t".$cid."\t".$filename."\n");
 		fclose($fp);
 	}
 
@@ -214,7 +279,7 @@ function process_and_upload($dir_name, $filename, $f)
 						if($file_info['extension']=="jpg" && strpos($file_info['basename'], ".jpg.jpg")===false)
 						{
 							process_and_upload($path."/".$file, $file_inner,$f);
-							exit;
+							//exit;
 						}
 							//echo "ISFILE:".$file_inner."<br>";
 					}
