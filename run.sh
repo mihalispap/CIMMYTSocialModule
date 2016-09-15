@@ -4,15 +4,17 @@
 
 cd flickr
 php upload.php
-#rm -r images
-#mkdir images
+rm -r images
+mkdir images
+cd ../
 
 ./export_dspace.sh "videos"
 
 cd youtube
 php upload.php
-#rm -r videos
-#mkdir videos
+rm -r videos
+mkdir videos
+cd ../
 
 exit
 
