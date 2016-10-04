@@ -1,1 +1,1 @@
-ya29.CjBcAwjhV3om1igQXV5_gioB1Ho396bL1usyFHVxZ6X-c21plkXjmQxidi5CvIX6QOQBearer36001473687640
+{"access_token":"ya29.Ci9yA03ebykg6GcOv9BGSOWYpw5lZHFPzi_UvUcP2Y8M2Opd-gTIc0elWwv3h7H2aw","token_type":"Bearer","expires_in":3600,"created":1475581603}
