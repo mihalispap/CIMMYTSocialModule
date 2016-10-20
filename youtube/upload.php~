@@ -335,7 +335,7 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 
 			fclose($handle);
 
-			//$client->setDefer(false);
+			$client->setDefer(false);
 
 			/**
 			 * Video has successfully been upload, now lets perform some cleanup functions for this video
@@ -351,9 +351,50 @@ $scope = array('https://www.googleapis.com/auth/youtube.upload', 'https://www.go
 					fwrite($fp, $hash."\t".$uploaded_video_id."\t".$cid."\t".$filename."\n");
 					fclose($fp);
 
-					$fp=fopen("conf/newest",'a');
-					fwrite($fp,$uploaded_video_id."\n");
-					fclose($fp);
+					try
+					{
+
+						$playlistId='PLNPvx8wq3BRi9PMsJUd-_Op7Gbk9lT32o';
+
+						// 5. Add a video to the playlist. First, define the resource being added
+    						// to the playlist by setting its video ID and kind.
+    						$resourceId = new Google_Service_YouTube_ResourceId();
+    						$resourceId->setVideoId($uploaded_video_id);
+    						$resourceId->setKind('youtube#video');
+
+						echo "so far so good";
+						print_r($resourceId);
+
+    						// Then define a snippet for the playlist item. Set the playlist item's
+    						// title if you want to display a different value than the title of the
+    						// video being added. Add the resource ID and the playlist ID retrieved
+    						// in step 4 to the snippet as well.
+    						$playlistItemSnippet = new Google_Service_YouTube_PlaylistItemSnippet();
+    						//$playlistItemSnippet->setTitle('First video in the test playlist');
+    						$playlistItemSnippet->setPlaylistId($playlistId);
+    						$playlistItemSnippet->setResourceId($resourceId);
+
+						echo "so far so good2";
+						print_r($playlistItemSnippet);
+
+    						// Finally, create a playlistItem resource and add the snippet to the
+    						// resource, then call the playlistItems.insert method to add the playlist
+    						// item.
+    						$playlistItem = new Google_Service_YouTube_PlaylistItem();
+    						$playlistItem->setSnippet($playlistItemSnippet);
+    						$playlistItemResponse = $youtube->playlistItems->insert(
+        						'snippet,contentDetails', $playlistItem, array());
+
+						echo "so far so good3";
+						print_r($playlistItemResponse);
+
+					} catch (Google_Service_Exception $e) {
+    						//$htmlBody .= sprintf('<p>A service error occurred: <code>%s</code></p>',
+        					print_r($e);
+  					} catch (Google_Exception $e){
+    						//$htmlBody .= sprintf('<p>An client error occurred: <code>%s</code></p>',
+        					print_r($e);
+  					}
 
 				}
 			}
